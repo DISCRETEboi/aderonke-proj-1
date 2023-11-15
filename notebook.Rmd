@@ -1,0 +1,42 @@
+---
+title: "Data Analysis using R"
+author: '******'
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+Loading required libraries
+
+```{r}
+library(dplyr)
+```
+
+Question 1: Reading the dataset into R
+
+```{r}
+cdrc_data <- read.csv("hh_churn_lsoa11_2023.csv")
+str(cdrc_data)
+```
+
+Question 2: Examining the LSOA code W01000092 Menai (Bangor), and identifying the index which W01000092 is greater than 0.5 and less than 0.8.
+
+```{r}
+cdrc_data_menai <- filter(cdrc_data, area == "W01000092")
+cdrc_data_menai_W01000092 <- unlist(cdrc_data_menai[1, -1])
+
+cdrc_data_menai_sub <- cdrc_data_menai_W01000092[cdrc_data_menai_W01000092 > 0.5 & cdrc_data_menai_W01000092 < 0.8]
+print(cdrc_data_menai_sub)
+print(names(cdrc_data_menai_sub))
+```
+
+Question 3: appending additional columns to the data
+
+```{r}
+cdrc_data$ARMI <- round(rowMeans(cdrc_data[, -c(1, 28)]), 3)
+cdrc_data$ARMIctgrs <- cut(cdrc_data$ARMI, breaks = c(0, 0.2, 0.5, 1), labels = c("Low", "Medium", "High"))
+str(cdrc_data)
+```
+
+
+
+
