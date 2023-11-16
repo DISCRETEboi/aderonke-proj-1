@@ -9,6 +9,8 @@ Loading required libraries
 
 ```{r}
 library(dplyr)
+library(stringr)
+library(ggplot2)
 ```
 
 ## Task 1
@@ -45,6 +47,18 @@ str(cdrc_data)
 
 ## Task 4
 
+xxx
+
+```{r}
+avg_armi <- round(colMeans(cdrc_data[, 2:27]), 3)
+years <- as.numeric(str_replace(names(avg_armi), "chn", ""))
+ts_df <- data.frame(year = years, avg_rmi = avg_armi)
+
+ggplot(ts_df, aes(x = year, y = avg_rmi)) +
+  geom_line() +
+  labs(x = "Year", y = "Average residential mobility index", title = "Trend of residential mobility index over time across regions") +
+  theme_bw()
+```
 
 
 
