@@ -1,0 +1,341 @@
+---
+title: "4011W1Lab - Logistic Regression"
+author: "Heather He (courtesy of Prof Bruce Vanstone @Bangor and Dr James Todd @Bond)"
+output: 
+  html_document:
+      theme: spacelab
+      toc: TRUE
+---
+
+# Install and library the required pacakges
+```{r}
+# Note that you only need to install packages once. No need to re-install for every new R session. 
+# install.packages("reshape")
+# install.packages("corrplot")
+# install.packages("ggplot2")
+# install.packages("dplyr") 
+# install.packages("MASS")
+
+# Note that you need to library the packages everytime you open a new session
+# It's recommended to library all the required packges in the beginning 
+library(reshape) # require is similar or library, but used more often
+library(corrplot)
+library(ggplot2)
+library(dplyr)
+library(MASS)
+
+```
+
+# Logistic Regression
+
+Last week we looked at decision trees, and this week we are going to be looking at logistic regression. While much of the data science process remains the same, the change in models does have some ramifications for the decisions to be made. We will need to think about how to visualise our data, what variables to use, and what problems it can be applied to.
+
+We are also going to have a brief introduction to a package for nicer graphics in R, which we will start with today.
+
+
+## ggplot2 and The Grammar of Graphics - a brief introduction
+
+The "ggplot2" (grammar of graphics) package is very widely used to improve the base plotting functionality of R. While we are not going to delve very deep into its capabilities today, we do want you to build familiarity with it. As such, we have a very brief introduction to it here, and will add new elements to it as we  need to. We will have a dedicated week for it later in the course, but its very useful for several visuals we want to show you before then. If you want to start on it early, we have also included some starter resources at the end of this script. As a motivation for going through them, remember that better visuals equals better assignment marks. 
+
+In terms of using ggplot, you will find that it requires more effort to produce simple graphics than the base R functions, but it requires much less effort for more complex graphics. It is also capable of making graphs which are much prettier. 
+
+Whenever you want to use ggplot, you will start with the ggplot() function. This function requires two things (mostly): The data you are going to use and the aesthetics you will use. 
+
+Aesthetics are things you can see. For example, your x-axis, y-axis, coloured points, etc. Lets start with the iris data set, and construct a graphic where we have Petal Length and Petal Width as our axes. We'll also colour our observations according to Species. 
+
+## Task 1: 
+- Modify the codes below to plot sepal length on x-axis, sepal width on y-axis. The color will remain to vary according to the species. Continue to the the scatter point figure. You should name the new figure as "SepalPlot"
+- Use help.search("geom_", package = "ggplot2") to check what other types of figure you could generate using "geom_" function. For example, how would you write the codes if you want to generate a bar chart? 
+
+```{r}
+# Data and aesthetics
+PetalPlot <- ggplot(data = iris, 
+                    mapping = aes(x = Petal.Width, # x-axis to represent the width of the petals
+                                  y = Petal.Length, # y-axis to represent the length of the petals
+                                  col = Species)  # the color of the points to vary according to species
+                    ) + geom_point() # specify to use the scatter point figure 
+                    
+PetalPlot
+
+# Type your solution here
+
+
+```
+
+If you wanted to explore other geoms, simply type help.search("geom_", package = "ggplot2") and you will see all the different options. Note that in the above code we didn't have to respecify our data and axes, and instead we could just add onto it. This is useful for building up a plot one bit at a time. 
+
+We will turn our attention back to the main focus of this workshop now, but will use a ggplot a few more times with extra bells and whistles as we go. 
+
+
+## Logistic Regression - learning class probability estimates
+
+### IRIS  
+
+Back to logistic regression now. Once again, we are going to be predicting species for the flowers in the iris dataset, but we have a problem that we didn't have with trees. The basic version of logistic regression only works (at least in this subject) on dichotomous data - we can't have three outcomes. For the sake of this example and because we know that they are very different to other flowers, we are going to remove the setosas from our data.
+
+As an extra level of simplification, and as an aid in illustrating the model, we will use only two variables in the model we construct. These are Petal.Width and Petal.Length. Now lets build and inspect our model. 
+
+
+
+```{r logistic iris}
+
+iris <- filter(.data = iris, Species != "setosa") #Remove setosas
+
+IrisLog <- glm(formula = Species ~ Petal.Width + Petal.Length, # Explain species using Petal Width and Petal Length
+               data = iris,                                    # Build the model on the iris data
+               family = binomial)                              # binomial means we want to use logistic regression
+
+
+#Inspect the model:
+IrisLog
+summary(IrisLog)
+
+```
+
+As with trees, it is a one-liner to build a model using R. Hopefully the summary output also looks familiar if you have taken statistics subjects in the past. Unlike with a tree though, this isn't really easy to visualise just by looking at the model elements. Lets take advantage of the fact that we only have 2-dimensions and visualise the decision boundary of the model.
+
+
+```{r logistic visual}
+
+# show the decision separation boundary
+# from the lecture:
+# Slope of boundary= - beta1/beta2, with beta1 being the coef of the first variable in the regression 
+# Intercept of boundary = -beta0/beta2, with beta0 being the intercept of the regression model 
+
+Slope <- coef(IrisLog)[2]/(-coef(IrisLog)[3]) 
+Intercept <- coef(IrisLog)[1]/(-coef(IrisLog)[3]) 
+
+#Doing the ggplot
+ggplot(data = iris, mapping = aes(x = Petal.Width, 
+                                  y = Petal.Length, 
+                                  color = Species))+ # Data to use, axes and colours
+  geom_point() +  # Scatter plot visual
+  geom_abline(slope = Slope, intercept= Intercept) # Add the decision boundary line 
+
+```
+
+This decision boundary is the line above which observations are classified as virginica and below which observations are classified as versicolor. 
+
+Based on the coefficients estimated, we could predict the probabilities of an observation being virginica or versicolor. 
+
+#### Task 2 
+Modify the codes below to generate predictions for 
+1. petal width 1.5, petal length 5
+2. petal width 1.5, petal length 4
+
+
+```{r logistic predictions}
+
+# make a few predictions
+predict(object = IrisLog, newdata = data.frame(Petal.Width=1.5,Petal.Length=5.15), type="response")
+
+
+# the prediction is the log odds converted back to a probability!
+x <- -45.272 + 10.447*1.5 + 5.755 * 5.15
+exp(x)/(1+exp(x))
+
+
+# Type your solution here
+
+```
+
+
+```{r}
+# overall predictions (on training data)
+iris$Predictions <- predict(object = IrisLog, newdata = iris, type = "response")
+```
+
+"$Predictions": The dollar sign $ is used to access or create a column in a dataframe in R. In this case, Predictions is a new column that is being added to the iris dataframe, where the predicted values will be stored.
+
+predict(): a generic function in R used for making predictions based on the results of various model fitting functions. It takes a model object and a set of data and produces predictions.
+
+object = IrisLog: The object argument specifies the model object used for making predictions. IrisLog is the model that was previously fitted. This model contains the formula and the fitted parameters necessary for making predictions.
+
+newdata = iris: The newdata argument is used to specify the dataset on which predictions should be made. In this case, predictions are being made on the iris dataset itself, which means the model will predict values based on the measurements in the iris dataset.
+
+type = "response": The type argument determines the type of prediction that is returned. When predicting with many types of models, including logistic regression, you can choose different types of predictions. Setting type = "response" typically means that you want the predicted probabilities for logistic regression.
+
+type could also take other values, for example
+- "link": This returns the prediction on the scale of the linear predictors (i.e., the linear combination of predictors or the logit for logistic regression).
+- "prob": For classification models, this returns the predicted probabilities of each class.
+- and many others 
+
+```{r}
+# plot the predictions 
+ggplot(data = iris, mapping = aes(x = Predictions)) + 
+  geom_histogram(bins = 15)
+
+```
+
+The predictions we see, both for the example data and in the histogram, demonstrate that we have a relatively high degree of certainty in our model. Even short moves away from the decision boundary result in probablities which are close to 0 or 1. The histogram shows this is the case for most observations. This means that the data is highly separable, whereas if we had a lot of 50/50 predictions then we would think our model was not doing a great job of distinguishing between the two classes.
+
+Finally, lets look at numerical performance. One thing to be aware of with generalised linear models (which a logistic regression is) is that you can't directly extract classes, only class probabilities. So we need to convert these into class memberships, which we will do by saying that observations with probabilities above 50% are one class and the rest are another. We will give further discussion to the impact of using a 50% cutoff in a later week. 
+
+```{r}
+#Remember the ifelse statement? ifelse(If condition, do this, else do this)
+iris$ClassPredict <- ifelse(iris$Predictions > 0.5, "virginica", "versicolor")
+table(Actual = as.character(iris$Species), Predicted = iris$ClassPredict)
+
+
+# Can see from this table that some points were not correctly classified, suggesting that some overlapped with each other (have same Petal.Width and Petal.Length)... 
+# Solution: add some jitter. 
+# Adding jitter is a technique used to prevent overplotting. Jittering adds a small amount of random noise (variation) to the data points. This spreads them out slightly along the axis or axes where jitter is applied, which can make individual points more distinct.
+ggplot(data = iris, mapping = aes(x=Petal.Width, 
+                                  y=Petal.Length, 
+                                  color=Species)) + 
+  geom_jitter(width = 0.1, height = 0.1) + # Like a scatter plot, but randomly jitter points
+  geom_abline(slope=Slope,intercept=Intercept)
+
+```
+
+We did pretty well, and by jittering our scatter plot a bit we can see exactly which flowers we get wrong. This has been a simple introduction to the use of logistic regression, and there are several aspects of it which should be highlighted.
+
+
+#### Important Notes 
+Given that this was an example, we simplified our scenario a bit. We only used two variables because that meant we could visualise the decision boundary neatly. This meant we didn't have to think at all about what variables we should include, which is a fairly large part of this type of modelling. You will see this more in the next example. It should also be emphasised that the decision boundary is useful for educational purposes, and we could only show it because we only had two dimensions. It should not be used if you have more than two dimensions and it definitely should not be motivation for only using two dimensions. It also doesn't tell you much about the performance of the model. For these reasons (and maybe one or two more), please don't include it in your assignments. Think of visualisations which are more meaningful. 
+
+
+
+### A more complex example: Logistic Regression in many dimesions
+
+Now lets look at a more complex example where we have more than two dimensions. This example uses the Wisconsin Breast Cancer dataset, described here: https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+(Diagnostic) 
+The raw data is here: https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data 
+The dataset has been the subject of a lot of real research: http://mlr.cs.umass.edu/ml/support/Breast+Cancer+Wisconsin+(Diagnostic)
+The first 11 (and primary) attributes are described here: http://www.cit.ctu.edu.vn/~dtnghi/detai/BreastCancer.html
+There are some original images available.
+
+This example sets out a fairly realistic modelling process. We start with some processing of the data, perform some exploratory analysis, build a model on a training set of data and assess it on a separate test set of data. 
+
+The data is called "biopsy" and is part of a package called "MASS". Lets start by loading the data and fixing some columns: remove ID column (meaningless as a predictor), and rename columns. We also remove NA values. 
+
+```{r Wisconsin_Breast_Cancer}
+
+# Wisconsin Breast Cancer Dataset is included in the MASS library
+
+# see https://books.google.com.au/books?id=nvh_CwAAQBAJ&pg=PA45&lpg=PA45&dq=%5Br%5D+logistic+regression+wisconsin+breast+cancer&source=bl&ots=PMI8s67oFJ&sig=zjXr7nbQvNBpx9rQrY4aTtUsSmo&hl=en&sa=X&ved=0ahUKEwjp7ff30uLKAhVEJJQKHYraBmEQ6AEISjAH#v=onepage&q=%5Br%5D%20logistic%20regression%20wisconsin%20breast%20cancer&f=false
+
+
+str(biopsy)
+
+#Remove first column ("ID")
+biopsy <- dplyr::select(.data = biopsy, -ID) #dplyr:: tells R to use the function from the dplyr package
+
+#Name the columns (based on description at provided links)
+names(biopsy) <- c("thick","u.size","u.shape","adhsn","s.size","nucl","chrom","n.nuc","mit","class")
+head(biopsy)
+
+#Remove NAs
+biopsy <- na.omit(biopsy)
+
+
+```
+
+Next, lets do some exploratory analysis to try to determine what variables may be good predictors of whether a biopsy is benign or malignant.
+
+```{r}
+# This chunk of codes visualise the distribution of the nine attributes (V1-V9) across different categories. 
+# The main purpose is draw the box plots. No worries if the codes are not all making sense to you. There will be one week dedicated to visualization in R using ggplot2 and re-shaping data to facilitate visualisation. 
+
+biop.m <- melt(data = biopsy,id.var="class")               # Convert data from wide to long format. Same data, different format
+ggplot(data = biop.m,mapping = aes(x = class,y = value)) + # X axis is biopsy class, y axis is value (which is common to all)
+  geom_boxplot() +                                         
+  facet_wrap(facets = ~variable, ncol=3)                    # Do plot for every level of 'variable' (and graph with 3 columns)
+
+```
+
+```{r}
+# check for high correlation / collinearity - lots of high correlations
+BiopsyCor <- cor(x = biopsy[,1:9]) # skip the last column Class
+corrplot.mixed(corr = BiopsyCor)
+
+```
+
+It looks like all the columns probably have some form of relationship with biopsy classes, so we will use all the columns for now. Lets break our data into a training set for building the model and a testing set for testing the model. 
+
+
+```{r}
+
+# create test and train subsets - randomly sample 1 or 2, with 70/30 probability. 
+set.seed(123)       #Always set a seed to ensure reproducibility
+index <- sample(x = c(1,2),size = nrow(biopsy),replace=TRUE,prob=c(0.7,0.3))
+
+#1s go to train (70%), 2s go to test (30%)
+Train <- filter(.data = biopsy, index == 1)
+Test <- filter(.data = biopsy, index == 2)
+
+# check train & test - want pretty much the same proportions
+table(Train$class)
+table(Test$class)
+```
+
+
+#### Task 3
+Modify the codes below, so that now instead of using all the attributes (V1-V9), the logistic regression will use only two predictors: thick and nucl. 
+Does the performance of the model improved? 
+
+```{r}
+# fit the logistic regression
+BiopsyLog <- glm(formula = class ~ .,data = Train, family = binomial)
+summary(BiopsyLog)
+
+```
+Remember from the lecture, a positive/negative coefficient suggests the event is more/less likely to occur with increase in the corresponding variable, and a zero coefficient (i.e., a coefficient that is not significant can be seen as statistically similar to zero) means the coefficient does not change the odds of the event either way. 
+
+So here both "thick" and "nucl" have positive coefficients, indicating with increases in these two variables, the event of interests is more likely to happen. 
+
+Finally, lets investigate the constructed model and see how it performs on train and test data. 
+ 
+```{r}
+# convert beta coefficients to odds ratio - what is the change in the outcome odds for a unit change in the attribute
+exp(coef(BiopsyLog))
+
+# predicted probabilities
+Train$Probs <- predict(object = BiopsyLog, data = Train, type="response")
+
+head(Train)
+# Now the Train dataset has a new column Probs which indicates the prob of the event happening
+# the estimated prob for the instance with malignant class is 0.9999
+# so a larger Probs value means more likely to be maglignant 
+
+Train$ClassPredict <- ifelse(Train$Probs > 0.5, "malignant", "benign")
+
+#Confusion matrix of results for Train
+table(Actual = Train$class, Predicted = Train$ClassPredict)
+
+# what percentage are correct?
+mean(Train$ClassPredict == Train$class) 
+# Train$ClassPredict == Train$class returns TRUE (1) or FALSE (0)
+# The mean of it is the percentage of the rows with TRUEs
+# An example: you have 10 data points, 1,0,0,0,0,1,0,0,0,0
+# The mean: 0.2 is equal to the percentage of 1s 20%. 
+
+# almost 97% on training data.. but what about unseen (test) data?
+Test$Probs <- predict(object = BiopsyLog, newdata = Test, type="response")
+Test$ClassPredict <- ifelse(Test$Probs > 0.5, "malignant", "benign")
+table(Actual=Test$class, Predicted = Test$ClassPredict)
+mean(Test$ClassPredict==Test$class)
+# pretty impressive!
+```
+
+```{r}
+# Type your solution here
+
+
+
+```
+
+We did really well. Regarding our use of train and test datasets, we do this so that we can arrive at a reasonable estimate of what model performance can be expected to be on new data. If we build and test a model on the same data, we tend to get optimistic performance measures. To some degree the algorithm 'memorises' random quirks in the data on the training data set, which are not expected to be present in future data. In this example we observed improved performance on the test data set, but in general you would expect a slight decrease in performance.
+
+This example demonstrated one of many possible ways of deciding whether to include variables in a regression model. This is by no means the only way or the most correct way. Find something reasonable which you are comfortable with. 
+
+
+
+
+### Additional Resources
+
+This week's extra resources primarily relate to ggplot and you will be able to find many more resources with a simple google search. Once again though, all previous additional resources are still valuable to go through. Some of the previous resources have content relevant to the GLMs we used today. 
+
+- [Harvard Tutorial on ggplot](https://tutorials.iq.harvard.edu/R/Rgraphics/Rgraphics.html)
+- [Excellent Examples](http://r-statistics.co/Top50-Ggplot2-Visualizations-MasterList-R-Code.html)
+- [ggplot Cheatsheet](https://www.rstudio.com/wp-content/uploads/2015/03/ggplot2-cheatsheet.pdf)
+- [Another tutorial](http://r-statistics.co/Complete-Ggplot2-Tutorial-Part1-With-R-Code.html)
