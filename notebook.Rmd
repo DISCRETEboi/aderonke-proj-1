@@ -55,14 +55,25 @@ years <- as.numeric(str_replace(names(avg_armi), "chn", ""))
 ts_df <- data.frame(year = years, avg_rmi = avg_armi)
 
 ggplot(ts_df, aes(x = year, y = avg_rmi)) +
-  geom_line() +
-  labs(x = "Year", y = "Average residential mobility index", title = "Trend of residential mobility index over time across regions") +
+  geom_line(color = "steelblue", linewidth = 1.2) +
+  labs(x = "Year",
+       y = "Average residential mobility index",
+       title = "Trend of residential mobility index over time across regions") +
   theme_bw()
 ```
 
+The chart in Figure is a time series plot showing the change in residential mobility index (averaged across all the regions) over time from 1997 to 2022. The plot clearly shows a sharp downward trend in the residential mobility index over time. 
 
 
-
+```{r}
+ggplot(cdrc_data, aes(x = chn1997, y = chn2022, color = ARMIctgrs)) +
+  geom_point() +
+  labs(x = "Residential mobility index in 1997",
+       y = "Residential mobility index in 2022",
+       color = "RMI level",
+       title = "Correlation plot for the residential mobility index - year 2022 against 1997") +
+  theme_bw()
+```
 
 
 
