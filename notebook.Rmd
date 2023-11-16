@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
-Loading required libraries
+Loading required libraries *dplyr*, *stringr* and *ggplot2*
 
 ```{r}
 library(dplyr)
@@ -19,20 +19,25 @@ Reading the dataset into R
 
 ```{r}
 cdrc_data <- read.csv("hh_churn_lsoa11_2023.csv")
-str(cdrc_data)
+str(cdrc_data) #extraneous
 ```
 
 ## Task 2
 
-Examining the LSOA code W01000092 Menai (Bangor), and identifying the index which W01000092 is greater than 0.5 and less than 0.8.
+Examining the LSOA code W01000092 Menai (Bangor), and identifying the residential mobility indices which are greater than 0.5 and less than 0.8.
 
 ```{r}
-cdrc_data_menai <- filter(cdrc_data, area == "W01000092")
-cdrc_data_menai_W01000092 <- unlist(cdrc_data_menai[1, -1])
+cdrc_data_menai_df <- filter(cdrc_data, area == "W01000092")
+cdrc_data_menai <- unlist(cdrc_data_menai_df[1, -1])
 
-cdrc_data_menai_sub <- cdrc_data_menai_W01000092[cdrc_data_menai_W01000092 > 0.5 & cdrc_data_menai_W01000092 < 0.8]
+cdrc_data_menai_sub <- cdrc_data_menai[cdrc_data_menai > 0.5 & cdrc_data_menai < 0.8]
+# printing the named vector
 print(cdrc_data_menai_sub)
+# printing the names of the vector
 print(names(cdrc_data_menai_sub))
+# printing the actual years
+x <- str_replace(names(cdrc_data_menai_sub), "chn", "")
+print(x)
 ```
 
 ## Task 3
@@ -40,8 +45,10 @@ print(names(cdrc_data_menai_sub))
 Appending additional columns to the data
 
 ```{r}
+# adds column one (averaged residential mobility for each region) as ARMI
 cdrc_data$ARMI <- round(rowMeans(cdrc_data[, -c(1, 28)]), 3)
-cdrc_data$ARMIctgrs <- cut(cdrc_data$ARMI, breaks = c(0, 0.2, 0.5, 1), labels = c("Low", "Medium", "High"))
+# adds column two (grouping regions into low, medium and high) as ARMIgrpd
+cdrc_data$ARMIgrpd <- cut(cdrc_data$ARMI, breaks = c(0, 0.2, 0.5, 1), labels = c("Low", "Medium", "High"))
 str(cdrc_data)
 ```
 
@@ -66,7 +73,7 @@ The chart in Figure is a time series plot showing the change in residential mobi
 
 
 ```{r}
-ggplot(cdrc_data, aes(x = chn1997, y = chn2022, color = ARMIctgrs)) +
+ggplot(cdrc_data, aes(x = chn1997, y = chn2022, color = ARMIgrpd)) +
   geom_point() +
   labs(x = "Residential mobility index in 1997",
        y = "Residential mobility index in 2022",
