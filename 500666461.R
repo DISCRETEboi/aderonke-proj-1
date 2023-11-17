@@ -1,6 +1,6 @@
 ### date: Nov. 16, 2023
 ### student id: 500666461
-### program purpose: data analysis using R
+### program purpose: Data Analysis using R
 
 ## loading required libraries *dplyr*, *stringr* and *ggplot2*
 library(dplyr)
@@ -46,10 +46,30 @@ ggplot(ts_df, aes(x = year, y = avg_rmi)) +
        title = "Trend of residential mobility index over time across regions") +
   theme_bw()
 
-# The chart in Figure 1 is a time series plot showing the change in residential mobility index (averaged across all the regions) over time
-# from 1997 to 2022. The plot clearly shows a sharp downward trend in the residential mobility index over time. The downward tredn is also
-# observed to be uniform, with the line approximately straight. The inference from the chart is that, on average, as years pass by, the residential
-# mobility decreases. And this applies to all regions.
+# The chart is a time series plot showing the change in residential mobility index (averaged across all the regions) over time from 1997 to 2022.
+# The plot clearly shows a sharp downward trend in the residential mobility index over time. The downward trend is also observed to be uniform,
+# with the line approximately straight. The inference from the chart is that, on average, as years pass by, the residential mobility decreases;
+# with this trend applying to all regions.
+
+## Second insight (with chart)
+ggplot(cdrc_data, aes(x = chn1997, y = chn2022, color = ARMIgrpd)) +
+  geom_point() +
+  labs(x = "Residential mobility index in 1997",
+       y = "Residential mobility index in 2022",
+       color = "RMI level",
+       title = "Correlation plot for the residential mobility index - year 2022 against 1997") +
+  theme(axis.ticks.y = element_blank(),
+        axis.text.y = element_text(size = 10),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_text(size = 10),
+        axis.title = element_text(size = 15, margin = margin(t = 15)),
+        plot.margin = margin(20, 0, 20, 0),
+        plot.title = element_text(size = 20, face = "bold"))
+
+# The residential mobility indices in 2022 are plotted against the residential mobility indices for 1997 to detect correlation in the indices
+# across the extreme years. The plot clearly shows a positive and strong correlation. The points are classified in the plot according to the
+# attribute Average Residential Mobility Index (ARMI) in the dataset. The interpretation from the plot could be that regions with high RMI in 1997
+# would also very likely have high RMI in 2022. Correspondingly, regions with low RMI in 1997 would likely have low RMI in 2022.
 
 
 
