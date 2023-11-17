@@ -30,7 +30,9 @@ print(x)
 # adds column one (averaged residential mobility for each region) as ARMI
 cdrc_data$ARMI <- round(rowMeans(cdrc_data[, -c(1, 28)]), 3)
 # adds column two (grouping regions into low, medium and high) as ARMIgrpd
-cdrc_data$ARMIgrpd <- cut(cdrc_data$ARMI, breaks = c(0, 0.2, 0.5, 1), labels = c("Low", "Medium", "High"))
+cdrc_data$ARMIgrpd <- cut(cdrc_data$ARMI,
+                          breaks = c(0, 0.2, 0.5, 1),
+                          labels = c("Low", "Medium", "High"))
 str(cdrc_data)
 
 ### Task 4
